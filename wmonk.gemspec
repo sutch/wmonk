@@ -3,11 +3,11 @@ require File.join([File.dirname(__FILE__),'lib','wmonk','version.rb'])
 spec = Gem::Specification.new do |s| 
   s.name = 'wmonk'
   s.version = Wmonk::VERSION
-  s.author = 'Your Name Here'
-  s.email = 'your@email.address.com'
-  s.homepage = 'http://your.website.com'
+  s.author = 'Dennis Sutch'
+  s.email = 'dennis@sutch.com'
+  s.homepage = 'http://dennis.sutch.com'
   s.platform = Gem::Platform::RUBY
-  s.summary = 'A description of your project'
+  s.summary = 'Web Monk (wmonk) is a command line application for making functional copies of websites.'
 # Add your other files here if you make them
   s.files = %w(
 bin/wmonk
