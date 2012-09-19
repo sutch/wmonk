@@ -7,7 +7,7 @@ spec = Gem::Specification.new do |s|
   s.email = 'dennis@sutch.com'
   s.homepage = 'http://dennis.sutch.com'
   s.platform = Gem::Platform::RUBY
-  s.summary = 'Web Monk (wmonk) is a command line application for making functional copies of websites.'
+  s.summary = 'Web Monk (wmonk) is a command line application for making static copies of websites.'
 # Add your other files here if you make them
   s.files = %w(
 bin/wmonk

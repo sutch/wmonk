@@ -11,7 +11,7 @@ end
 
 include GLI::App
 
-program_desc 'Make functional copies of websites'
+program_desc 'Make static copies of websites'
 
 version Wmonk::VERSION
 

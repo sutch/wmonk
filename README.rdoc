@@ -1,6 +1,6 @@
 = wmonk
 
-Web Monk (wmonk) is a command line application for making functional copies of websites.
+Web Monk (wmonk) is a command line application for making static copies of websites.
 
 :include:wmonk.rdoc
 
