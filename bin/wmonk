@@ -11,35 +11,98 @@ end
 
 include GLI::App
 
-program_desc 'Make static copies of websites'
+program_desc 'Make a static copy of a website'
 
 version Wmonk::VERSION
 
-desc 'Describe some switch here'
-switch [:s,:switch]
+desc 'Be verbose'
+switch [:v,:verbose]
 
-desc 'Describe some flag here'
-default_value 'the default'
-arg_name 'The name of the argument'
-flag [:f,:flagname]
+desc 'Specify working folder'
+arg_name 'folder', :optional
+default_value "."
+flag [:p,:pathname]
 
-desc 'Describe init here'
-arg_name 'Describe arguments to init here'
+desc 'Initialize a folder to copy a website'
+long_desc <<EOS
+Create folder if it does not exist.  Populate folder with initial configuration files.
+EOS
+
+arg_name 'seed URL(s)'
 command :init do |c|
-  c.desc 'Describe a switch to init'
-  c.switch :s
+  c.desc 'Augment seeds with well known files'
+  c.switch [:a, :augment]
 
-  c.desc 'Describe a flag to init'
-  c.default_value 'default'
-  c.flag :f
-  c.action do |global_options,options,args|
+  c.action do |global,options,args|
 
-    # Your command logic here
-     
-    # If you have any errors, just raise them
-    # raise "that command made no sense"
+    # determine seed URLs
+    if args.length == 0
+      raise "no seed URLs supplied"
+    end
+    url = []
+    args.each do |u|
+      if u =~ URI::DEFAULT_PARSER.regexp[:ABS_URI]
+        url.push u
+        puts "Seed URL: #{u}" if global[:verbose]
+      else
+        raise "bad seed URL: #{u}"
+      end
+    end
 
-    puts "init command ran"
+    # determine protocols/hostnames/ports to limit spidering
+    base_url = {}
+    url.each do |u|
+      u = URI.parse u
+      u.scheme = u.scheme.downcase
+      raise "#{u.scheme} scheme not supported: #{u}" if ! ['http', 'https'].include? u.scheme
+      u.host = u.host.downcase
+      base_url[u.host] = {} if ! base_url.has_key? u.host
+      base_url[u.host][u.port] = {} if ! base_url[u.host].has_key? u.port
+      base_url[u.host][u.port][u.scheme] = nil
+    end
+
+    # create working folder if it does not exist
+    if ! File.exists? global[:pathname]
+      puts "Creating working folder: #{global[:pathname]}" if global[:verbose]
+      begin
+        Dir.mkdir global[:pathname]
+      rescue e
+        raise e.message
+      end
+    end
+
+    # error if working folder is not empty
+    if ! (Dir.entries(global[:pathname]) - %w{ . .. }).empty?
+      raise "cannot initialize non-empty working folder - #{global[:pathname]}"
+    end
+
+    conf_filename = Pathname.new(global[:pathname]) + 'spider.yaml'
+    puts "Creating configuration file: #{conf_filename}" if global[:verbose]
+
+    # augment seed URLs
+    if options[:augment]
+      puts "Augmenting seed URLs with well known files" if global[:verbose]
+      YAML::load(File.open(File.join(File.dirname(__FILE__), '../assets/well_known_files.yaml')), 'r').each do |path|
+        base_url.each do |host, ports|
+          ports.each do |port, schemes|
+            schemes.each_key do |scheme|
+              url.push URI.parse("#{scheme}://#{host}:#{port}#{path}").to_s
+            end
+          end
+        end
+      end
+    end
+
+    # read spider.yaml template and substitute values
+    SEED_URLS = {'seed_urls' => url}
+    conf = ERB.new(File.open(File.join(File.dirname(__FILE__), '../assets/spider.yaml.template'), 'r').read).result
+
+    puts "Writing spider.yaml" if global[:verbose]
+    begin
+      File.open(Pathname.new(global[:pathname]) + 'spider.yaml', 'w') { |f| f.write(conf) }
+    rescue e
+      raise e.message
+    end
   end
 end
 
@@ -49,6 +112,17 @@ pre do |global,command,options,args|
   # chosen command
   # Use skips_pre before a command to skip this block
   # on that command only
+  puts "Requested pathname for working folder: #{global[:pathname]}" if global[:verbose]
+  if File.exists? global[:pathname]
+    puts "Pathname exists" if global[:verbose]
+    if File.directory? global[:pathname]
+      puts "Pathname is a folder" if global[:verbose]
+    else
+      raise "pathname for working folder is not a folder - #{global[:pathname]}"
+    end
+  else
+    puts "Pathname does not exist" if global[:verbose]
+  end
   true
 end
 

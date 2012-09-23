@@ -1,0 +1,8 @@
+# Well known files which are not normally linked from within a website:
+
+- /favicon.ico  # http://www.w3.org/2005/10/howto-favicon
+- /robots.txt  # http://www.robotstxt.org/
+- /w3c/p3p.xml  # http://www.w3.org/P3P/
+- /dublin.rdf  # http://dublincore.org/documents/dcq-rdf-xml/
+- /opensearch.xml  # http://www.opensearch.org
+- /crossdomain.xml  # http://kb2.adobe.com/cps/142/tn_14213.html

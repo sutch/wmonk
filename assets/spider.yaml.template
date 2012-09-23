@@ -1,0 +1,4 @@
+# wmonk configuration file
+
+# URLs to initially request
+<%= SEED_URLS.to_yaml %>
