@@ -14,6 +14,8 @@ bin/wmonk
 lib/wmonk/version.rb
 lib/wmonk.rb
   )
+  s.homepage    =
+    'http://rubygems.org/gems/wmonk'
   s.require_paths << 'lib'
   s.has_rdoc = true
   s.extra_rdoc_files = ['README.rdoc','wmonk.rdoc']
@@ -22,6 +24,8 @@ lib/wmonk.rb
   s.executables << 'wmonk'
   s.add_development_dependency('rake')
   s.add_development_dependency('rdoc')
-  s.add_development_dependency('aruba')
-  s.add_runtime_dependency('gli','2.1.0')
+  s.add_runtime_dependency('gli')
+  s.add_runtime_dependency('sutch-anemone')  # git://github.com/sutch/anemone.git
+  s.add_runtime_dependency('sqlite3')
+  s.add_runtime_dependency('rack')
 end
