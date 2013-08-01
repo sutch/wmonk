@@ -1,0 +1,224 @@
+#!/usr/bin/env ruby
+require 'gli'
+require 'wmonk'
+
+include GLI::App
+
+program_desc 'Make a static copy of a website'
+
+version Wmonk::VERSION
+
+desc 'Be verbose'
+switch [:v,:verbose]
+
+desc 'Specify working folder'
+arg_name 'folder', :optional
+default_value "."
+flag [:p,:pathname]
+
+desc 'Initialize a folder to copy a website'
+long_desc <<EOS
+Create folder if it does not exist.  Populate folder with initial configuration files.
+EOS
+
+# TODO: obey robots.txt switch / configuration parameter
+
+arg_name 'seed URL(s)'
+command :init do |c|
+  c.desc 'Augment seeds with well known files'
+  c.switch [:a, :augment]
+
+  c.action do |global,options,args|
+
+    # determine seed URLs
+    if args.length == 0
+      raise "no seed URLs supplied"
+    end
+    urls = []
+    args.each do |u|
+      if u =~ URI::DEFAULT_PARSER.regexp[:ABS_URI]
+        urls.push u
+        puts "Seed URL: #{u}" if global[:verbose]
+      else
+        raise "bad seed URL: #{u}"
+      end
+    end
+
+    # determine host, port and scheme; ensure configuration is limited to one website
+    host = port = scheme = nil
+    urls.each do |u|
+      u = URI.parse u
+      u.scheme = u.scheme.downcase
+      raise "#{u.scheme} scheme not supported: #{u}" if ! ['http', 'https'].include? u.scheme
+      u.host = u.host.downcase
+      if host == nil
+        host = u.host
+        port = u.port
+        scheme = u.scheme
+      end
+      if host != u.host or port != u.port or scheme != u.scheme
+        url_1 = URI.parse("#{scheme}://#{host}:#{port}").to_s
+        url_2 = URI.parse("#{u.scheme}://#{u.host}:#{u.port}").to_s
+        raise "multiple websites not supported: requested #{url_1} and #{url_2}" 
+      end
+    end
+
+    # create working folder if it does not exist
+    if ! File.exists? global[:pathname]
+      puts "Creating working folder: #{global[:pathname]}" if global[:verbose]
+      begin
+        Dir.mkdir global[:pathname]
+      rescue Exception => e
+        raise e.message
+      end
+    end
+
+    # error if working folder is not empty
+    if ! (Dir.entries(global[:pathname]) - %w{ . .. }).empty?
+      raise "cannot initialize non-empty working folder - #{global[:pathname]}"
+    end
+
+    conf_filename = Pathname.new(global[:pathname]) + 'spider.yaml'
+    puts "Creating configuration file: #{conf_filename}" if global[:verbose]
+
+    # augment seed URLs
+    if options[:augment]
+      puts "Augmenting seed URLs with well known files" if global[:verbose]
+      YAML::load(File.open(File.join(File.dirname(__FILE__), '../assets/well_known_files.yaml')), 'r').each do |path|
+        urls.push URI.parse("#{scheme}://#{host}:#{port}#{path}").to_s
+      end
+    end
+
+    # read spider.yaml template and substitute values
+    SEED_URLS = {'seed_urls' => urls}
+    conf = ERB.new(File.open(File.join(File.dirname(__FILE__), '../assets/spider.yaml.template'), 'r').read).result
+
+    puts "Writing spider.yaml" if global[:verbose]
+    begin
+      File.open(Pathname.new(global[:pathname]) + 'spider.yaml', 'w') { |f| f.write(conf) }
+    rescue Exception => e
+      raise e.message
+    end
+  end
+end
+
+desc 'Spider the website'
+long_desc <<EOS
+Spider the website and create a local copy of the website responses.
+EOS
+
+# TODO: gracefully handle Ctrl-C (close SQLite3 database)
+# TODO: if SQLite3 database exists, re-get URLs as initial URLs
+
+command :spider do |c|
+  c.action do |global,options,args|
+
+    conf_filename = Pathname.new(global[:pathname]) + 'spider.yaml'
+    puts "Reading spider.yaml" if global[:verbose]
+    begin
+      conf = YAML::load(File.open(Pathname.new(global[:pathname]) + 'spider.yaml', 'r'))
+    rescue Exception => e
+      raise e.message
+    end
+
+    urls = conf['seed_urls']
+
+    # determine host, port and scheme; ensure configuration is limited to one website
+    host = port = scheme = nil
+    urls.each do |u|
+      u = URI.parse u
+      u.scheme = u.scheme.downcase
+      raise "#{u.scheme} scheme not supported: #{u}" if ! ['http', 'https'].include? u.scheme
+      u.host = u.host.downcase
+      if host == nil
+        host = u.host
+        port = u.port
+        scheme = u.scheme
+      end
+      if host != u.host or port != u.port or scheme != u.scheme
+        url_1 = URI.parse("#{scheme}://#{host}:#{port}").to_s
+        url_2 = URI.parse("#{u.scheme}://#{u.host}:#{u.port}").to_s
+        raise "multiple websites not supported: requested #{url_1} and #{url_2}"
+      end
+    end
+    u = URI.parse("#{scheme}://#{host}:#{port}")
+    puts "Configured to spider #{u.to_s}" if global[:verbose]
+
+    raise "website spidered (partially?) and spider cannot be restarted" if File.exist?(Pathname.new(global[:pathname]) + 'spider.sqlite')
+
+    Anemone.crawl(urls, verbose: true, page_class: Anemone::Resource) do |anemone|
+      anemone.storage = Wmonk::AnemoneStorageSQLite3.new((Pathname.new(global[:pathname]) + 'spider.sqlite').to_s)
+
+      anemone.on_every_page do |page|
+        puts "on_every_page: #{page.url} (#{page.code}) #{page.content_type} length: #{page.body.length} => processing (on_every_page)" #if global[:verbose]
+      end
+
+      anemone.focus_crawl { |page|
+        puts "focus_crawl: #{page.url} => processing (focus_crawl)" if global[:verbose]
+        #page.links
+        links = page.links
+        puts "focus_crawl: number of links = #{links.count}"
+        links
+      }
+    end
+  end
+end
+
+desc 'Serve website from static copy'
+long_desc <<EOS
+View static copy of website from a web browser.
+EOS
+
+command :serve_web do |c|
+  c.desc 'Port from which to serve website'
+  c.switch [:p, :port]
+
+  c.action do |global,options,args|
+    copy = Wmonk::Copy.new(global[:pathname])
+    Rack::Server.start :app => Wmonk::Server.new(copy, type: :web), :Port => 8111
+  end
+end
+
+command :serve_info do |c|
+  c.desc 'Port from which to serve information about website'
+  c.switch [:p, :port]
+
+  c.action do |global,options,args|
+    copy = Wmonk::Copy.new(global[:pathname])
+    Rack::Server.start :app => Wmonk::Server.new(copy, type: :info), :Port => 8112
+  end
+end
+
+pre do |global,command,options,args|
+  # Pre logic here
+  # Return true to proceed; false to abourt and not call the
+  # chosen command
+  # Use skips_pre before a command to skip this block
+  # on that command only
+  puts "Requested pathname for working folder: #{global[:pathname]}" if global[:verbose]
+  if File.exists? global[:pathname]
+    puts "Pathname exists" if global[:verbose]
+    if File.directory? global[:pathname]
+      puts "Pathname is a folder" if global[:verbose]
+    else
+      raise "pathname for working folder is not a folder - #{global[:pathname]}"
+    end
+  else
+    puts "Pathname does not exist" if global[:verbose]
+  end
+  true
+end
+
+post do |global,command,options,args|
+  # Post logic here
+  # Use skips_post before a command to skip this
+  # block on that command only
+end
+
+on_error do |exception|
+  # Error logic here
+  # return false to skip default error handling
+  true
+end
+
+exit run(ARGV)

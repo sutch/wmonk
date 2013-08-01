@@ -1,0 +1,5 @@
+= wmonk
+
+Generate this with
+    wmonk rdoc
+After you have described your command line interface

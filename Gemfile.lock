@@ -1,0 +1,42 @@
+PATH
+  remote: .
+  specs:
+    wmonk (0.0.1)
+      gli
+      rack
+      sqlite3
+      sutch-anemone
+
+GEM
+  remote: https://rubygems.org/
+  specs:
+    addressable (2.3.5)
+    content_urls (0.1.8)
+      css_parser (~> 1.3.4)
+      nokogiri (~> 1.5.10)
+      rkelly (~> 1.0.7)
+    css_parser (1.3.4)
+      addressable
+    gli (2.7.0)
+    json (1.8.0)
+    nokogiri (1.5.10)
+    rack (1.5.2)
+    rake (10.1.0)
+    rdoc (4.0.1)
+      json (~> 1.4)
+    rkelly (1.0.7)
+    robotex (1.0.0)
+    sqlite3 (1.3.7)
+    sutch-anemone (0.7.2)
+      content_urls (>= 0.1.8)
+      nokogiri (>= 1.3.0)
+      robotex (>= 1.0.0)
+
+PLATFORMS
+  ruby
+  x86-mingw32
+
+DEPENDENCIES
+  rake
+  rdoc
+  wmonk!
