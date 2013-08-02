@@ -47,7 +47,8 @@ module Wmonk
       end
 
       begin
-        @db = SQLite3::Database.new @sqlite_filename.to_s
+        @db = SQLite3::Database.open @sqlite_filename.to_s
+        @db.busy_timeout 17
       rescue Exception => e
         raise e.message
       end

@@ -175,7 +175,7 @@ command :serve_web do |c|
 
   c.action do |global,options,args|
     copy = Wmonk::Copy.new(global[:pathname])
-    Rack::Server.start :app => Wmonk::Server.new(copy, type: :web), :Port => 8111
+    Wmonk::WebServer.new(copy, port: options[:port]).start
   end
 end
 
@@ -185,7 +185,7 @@ command :serve_info do |c|
 
   c.action do |global,options,args|
     copy = Wmonk::Copy.new(global[:pathname])
-    Rack::Server.start :app => Wmonk::Server.new(copy, type: :info), :Port => 8112
+    Wmonk::InfoServer.new(copy, type: :info).start
   end
 end
 

@@ -28,4 +28,6 @@ lib/wmonk.rb
   s.add_runtime_dependency('sutch-anemone')  # git://github.com/sutch/anemone.git
   s.add_runtime_dependency('sqlite3')
   s.add_runtime_dependency('rack')
+  s.add_runtime_dependency('sinatra')
+  s.add_runtime_dependency('slim')
 end
