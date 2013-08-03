@@ -36,5 +36,15 @@ SQL
       end
     end
 
+    # Ugly hack so that Anemone::Core.run does not consider non-requested links as successfully obtained resources/pages
+    # (called by Anemone::PageStore.has_key? via Anemone::PageStore.has_page?)
+    def has_key?(url)
+      !!@db.get_first_value('SELECT id FROM anemone_storage WHERE key = ? AND code IS NOT NULL', url.to_s)
+    end
+
+    def not_visited_urls
+      @db.execute("SELECT key FROM anemone_storage WHERE code IS NULL ORDER BY id").map{|t| t[0]}
+    end
+
   end
 end

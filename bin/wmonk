@@ -144,10 +144,12 @@ command :spider do |c|
     u = URI.parse("#{scheme}://#{host}:#{port}")
     puts "Configured to spider #{u.to_s}" if global[:verbose]
 
-    raise "website spidered (partially?) and spider cannot be restarted" if File.exist?(Pathname.new(global[:pathname]) + 'spider.sqlite')
+    copy_exists = File.exist?(Pathname.new(global[:pathname]) + 'spider.sqlite')
+    storage = Wmonk::AnemoneStorageSQLite3.new((Pathname.new(global[:pathname]) + 'spider.sqlite').to_s)
+    urls = storage.not_visited_urls if copy_exists
 
     Anemone.crawl(urls, verbose: true, page_class: Anemone::Resource) do |anemone|
-      anemone.storage = Wmonk::AnemoneStorageSQLite3.new((Pathname.new(global[:pathname]) + 'spider.sqlite').to_s)
+      anemone.storage = storage
 
       anemone.on_every_page do |page|
         puts "on_every_page: #{page.url} (#{page.code}) #{page.content_type} length: #{page.body.length} => processing (on_every_page)" #if global[:verbose]
