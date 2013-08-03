@@ -28,6 +28,7 @@ GEM
     rake (10.1.0)
     rdoc (4.0.1)
       json (~> 1.4)
+    redcarpet (3.0.0)
     rkelly (1.0.7)
     robotex (1.0.0)
     sinatra (1.4.3)
@@ -44,6 +45,7 @@ GEM
       robotex (>= 1.0.0)
     temple (0.6.6)
     tilt (1.4.1)
+    yard (0.8.7)
 
 PLATFORMS
   ruby
@@ -52,4 +54,6 @@ PLATFORMS
 DEPENDENCIES
   rake
   rdoc
+  redcarpet
   wmonk!
+  yard

@@ -1,6 +1,58 @@
 = wmonk
 
-Web Monk (wmonk) is a command line application for making static copies of websites.
+wmonk (Web Monk) is a command line application for making static copies of websites.
 
-:include:wmonk.rdoc
+Note: This application is currently considered ALPHA and will experience major changes to the user interfaces, internal
+interfaces, functionality and data storage.
 
+Note: This application requires the sutch-anemone gem, a branch Anemone, to allow the capture of all website
+responses/resources.
+
+== The Need
+
+wmonk attempts to copy complex, dynamic websites which other solutions fail to accurately copy, usually due to:
+* internal redirects
+* redirects to internal resources through a third party website
+* resources, such as CSS and Javascript, not parsed for URLs by other solutions
+
+== Overview
+
+wmonk uses a working forlder for each website to be copied.  The working folder is used to contain wmonk's
+configuration for spidering and parsing the website, as well as the static copy of the website.
+
+wmonk's command line interface provides:
+* init -- to initialize a working folder for configuration and website responses for an individual website
+* spider -- to spider a website
+* serve_info -- to provide a web interface to information about the copy of the website
+* serve_web -- to browse the static copy of the website
+
+== Examples
+
+  % wmonk help
+  % wmonk -p ~/sites/example.com init -a http://www.example.com
+  % wmonk -p ~/sites/example.com spider
+  % wmonk -p ~/sites/example.com serve_web
+
+== Implementation Details
+
+wmonk stores a static copy of a website in a single SQLite3 file.  The static copy contains the website's responses
+to each request for a resource.
+
+== Bugs
+
+Report bugs to https://github.com/sutch/wmonk/issues.
+
+== License
+
+Copyright 2013 Dennis Sutch
+
+This file is part of wmonk.
+
+wmonk is free software: you can redistribute it and/or modify it under the terms of the GNU General Public License
+as published by the Free Software Foundation, either version 3 of the License, or (at your option) any later version.
+
+wmonk is distributed in the hope that it will be useful, but WITHOUT ANY WARRANTY; without even the implied warranty
+of MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the GNU General Public License for more details.
+
+You should have received a copy of the GNU General Public License along with wmonk. If not,
+see http://www.gnu.org/licenses/.
