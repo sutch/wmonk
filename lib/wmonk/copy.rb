@@ -75,7 +75,7 @@ module Wmonk
       rows
     end
 
-    # Obtain a resource.
+    # Obtain a resource by its path.
     #
     # @example
     #   resource = website.resource_by_path('/index.html')
@@ -89,15 +89,61 @@ module Wmonk
       Marshal.load(rows[0][0])  # return first column (the 'data' field) of first row
     end
 
-    # Iterate through all resources. Block is passed an Anemone::Resource object.
+    # Obtain a resource by its url.
     #
     # @example
-    #   website.each_resource do {|r| puts "URL: #{r[0]}" }
-    def each_resource
-      rows = @db.execute( "select key, code, content_type from anemone_storage")
-      rows.each do |resource|
-        yield(resource)
+    #   resource = website.resource_by_url('http://www.example.com/index.html')
+    # @param [String] url the URL identifying the resource
+    # @return [Anemone::Resource] the resource
+    def resource_by_url(url)
+      rows = @db.execute( "select data from anemone_storage where key=?", url )
+      # TODO: error if URL results in multiple resources
+      Marshal.load(rows[0][0])  # return first column (the 'data' field) of first row
+    end
+
+    # Iterate through all resource records. Block is passed a hash containing record key/value pairs.
+    #
+    # @example
+    #   website.each_resource_record do {|r| puts "URL: #{r[:url]}" }
+    def each_resource_record
+      rows = @db.execute( "select key, code, content_type, data, is_not_found, is_redirect, redirect_to from anemone_storage")
+      rows.each do |r|
+        resource_record = {
+            :key => r[0],
+            :url => r[0],
+            :code => r[1],
+            :content_type => r[2],
+            :data => r[3],
+            :resource => Marshal.load(r[3]),
+            :is_not_found => r[4] == 0 ? false : true,
+            :is_redirect => r[5] == 0 ? false : true,
+            :redirect_to => r[6],
+        }
+        yield(resource_record)
       end
+    end
+
+    # Obtain a resource record by its url.
+    #
+    # @example
+    #   resource = website.resource_record_by_url('http://www.example.com/index.html')
+    # @param [String] url the URL identifying the resource
+    # @return [Hash] the resource's table record containing record key/value pairs
+    def resource_record_by_url(url)
+      rows = @db.execute( "select key, code, content_type, data, is_not_found, is_redirect, redirect_to from anemone_storage where key=?", url )
+      # TODO: error if URL results in multiple resources
+      r = rows[0]
+      return {
+          :key => r[0],
+          :url => r[0],
+          :code => r[1],
+          :content_type => r[2],
+          :data => r[3],
+          :resource => Marshal.load(r[3]),
+          :is_not_found => r[4] == 0 ? false : true,
+          :is_redirect => r[5]  == 0 ? false : true,
+          :redirect_to => r[6],
+      }
     end
 
   end

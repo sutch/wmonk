@@ -2,6 +2,7 @@ require 'wmonk/version.rb'
 
 require 'pathname'
 require 'uri'
+require 'cgi'
 require 'logger'
 require 'sqlite3'
 require 'anemone'

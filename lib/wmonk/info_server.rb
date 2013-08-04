@@ -13,10 +13,20 @@ module Wmonk
       copy = @copy  # local variable for Sinatra
       my_app = Sinatra.new do
         enable :inline_templates
-        get('/') {
-          slim :index, :locals => {:copy => copy } }
-        get('/resources') {
-          slim :resources, :locals => {:copy => copy } }
+        get '/' do
+          slim :index, :locals => {:copy => copy }
+        end
+        get '/resources' do
+          slim :resources, :locals => {:copy => copy }
+        end
+        get '/resource/:url' do |url|
+          record = copy.resource_record_by_url(url)
+          if record.nil?
+            'Resource not found'
+          else
+            slim :resource, :locals => {:record => record }
+          end
+        end
       end
       my_app.run!
     end
@@ -54,10 +64,29 @@ li
 
 @@resources
 h2 Resources
-- copy.each_resource do |r|
-  li
-    | #{r[0]}
-    - if r[1].nil?
-      |  -- Not yet requested
-    - else
-      |  [#{r[1]}] #{r[2]}
+table[border='1' cellspacing=0]
+  - copy.each_resource_record do |r|
+    tr
+      td.url
+        a href="/resource/#{CGI::escape(r[:url])}" #{r[:url]}
+      - if r[:code].nil?
+        td.status = '--'
+      - else
+        td.status = r[:code]
+      td.content_type = r[:content_type]
+
+@@resource
+h2 Resource
+li URL: #{record[:url]}
+li Response code: #{record[:code]}
+li Content type: #{record[:content_type]}
+li Is not found: #{record[:is_not_found]}
+li Is redirect: #{record[:is_redirect]}
+li Redirect to: #{record[:redirect_to]}
+
+- if record[:resource].links.any?
+  h3 Links found in resource
+  - record[:resource].links.each do |link|
+    li #{link}
+- else
+  h3 No links found in resource
