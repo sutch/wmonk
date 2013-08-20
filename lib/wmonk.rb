@@ -22,7 +22,6 @@ module Wmonk
 
   CONF_FILENAME = 'wmonk.yaml'
   CONF_TEMPLATE = 'wmonk.yaml.template'
-  UNNAMED_PROJECT_TITLE = 'Unnamed Wmonk project'
   SUPPORTED_URI_SCHEMES = ['http', 'https']
   WELL_KNOWN_FILES_FILENAME = 'well_known_files.yaml'
 

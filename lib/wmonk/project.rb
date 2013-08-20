@@ -13,7 +13,7 @@ module Wmonk
     # @return [Object] the created project
     def self.create(path, options = {})
       options = {
-          :title => UNNAMED_PROJECT_TITLE,
+          :title => nil,
           :seed_urls => [],
           :seed_well_known_files => false,
       }.merge(options)
@@ -42,6 +42,12 @@ module Wmonk
         end
       end
 
+      if options[:title].nil?
+        title = { 'title' => "Wmonk project to copy " + (host.nil? ? seed_urls[0] : URI.parse("#{scheme}://#{host}:#{port}").to_s) }
+      else
+        title = { 'title' => options[:title] }
+      end
+
       # create working folder if it does not exist
       Dir.mkdir path if ! File.exists? path
       raise "path is not a folder - #{path}" if ! File.directory? path
@@ -53,8 +59,6 @@ module Wmonk
 
       conf_filename = Pathname.new(path) + CONF_FILENAME
 
-      # read conf template and substitute values
-      title = { 'title' => options[:title] }
       seed_urls = { 'seed_urls' => seed_urls }
       conf = ERB.new(File.open(assets_path(CONF_TEMPLATE), 'r').read).result binding
       begin
