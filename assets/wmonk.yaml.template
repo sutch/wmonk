@@ -1,0 +1,8 @@
+---
+# Wmonk project configuration file
+
+# Title of project
+<%= title.to_yaml.sub(/^---\n/, '') %>
+
+# URLs to initially request
+<%= seed_urls.to_yaml.sub(/^---\n/, '') %>

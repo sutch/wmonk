@@ -21,8 +21,6 @@ long_desc <<EOS
 Create folder if it does not exist.  Populate folder with initial configuration files.
 EOS
 
-# TODO: obey robots.txt switch / configuration parameter
-
 arg_name 'seed URL(s)'
 command :init do |c|
   c.desc 'Augment seeds with well known files'
@@ -91,7 +89,7 @@ command :init do |c|
 
     # read spider.yaml template and substitute values
     SEED_URLS = {'seed_urls' => urls}
-    conf = ERB.new(File.open(File.join(File.dirname(__FILE__), '../assets/spider.yaml.template'), 'r').read).result
+    conf = ERB.new(File.open(File.join(File.dirname(__FILE__), '../assets/wmonk.yaml.template'), 'r').read).result
 
     puts "Writing spider.yaml" if global[:verbose]
     begin
@@ -193,7 +191,7 @@ end
 
 pre do |global,command,options,args|
   # Pre logic here
-  # Return true to proceed; false to abourt and not call the
+  # Return true to proceed; false to abort and not call the
   # chosen command
   # Use skips_pre before a command to skip this block
   # on that command only
