@@ -48,7 +48,7 @@ describe Wmonk::Project, '#open' do
     project.title.should == title
   end
 
-  it 'obtains an empty of seed URLs from the configuration file when no seed URLs' do
+  it 'obtains an empty array of seed URLs from the configuration file when no seed URLs' do
     Wmonk::Project.create(@dir)
     project = Wmonk::Project.open(@dir)
     project.seed_urls.size.should == 0
