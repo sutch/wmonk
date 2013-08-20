@@ -33,19 +33,20 @@ module Wmonk
           port = u.port
           scheme = u.scheme
           if options[:seed_well_known_files]
-            well_known_files.each do |path|
-              seed_urls << URI.parse("#{scheme}://#{host}:#{port}#{path}").to_s
-            end
+            well_known_files.each { |path| seed_urls << URI.parse("#{scheme}://#{host}:#{port}#{path}").to_s }
           end
         elsif host != u.host or port != u.port or scheme != u.scheme
           warn "multiple websites not supported - #{seed_urls[0]} and #{u}"
         end
       end
 
+      title = { 'title' => options[:title] }
       if options[:title].nil?
-        title = { 'title' => "Wmonk project to copy " + (host.nil? ? seed_urls[0] : URI.parse("#{scheme}://#{host}:#{port}").to_s) }
-      else
-        title = { 'title' => options[:title] }
+        if host.nil? && seed_urls.size == 0
+          title = { 'title' => "Wmonk project to copy an unspecified website" }
+        else
+          title = { 'title' => "Wmonk project to copy " + (host.nil? ? seed_urls[0] : URI.parse("#{scheme}://#{host}:#{port}").to_s) }
+        end
       end
 
       # create working folder if it does not exist
@@ -58,16 +59,11 @@ module Wmonk
       end
 
       conf_filename = Pathname.new(path) + CONF_FILENAME
-
       seed_urls = { 'seed_urls' => seed_urls }
       conf = ERB.new(File.open(assets_path(CONF_TEMPLATE), 'r').read).result binding
-      begin
-        File.open(conf_filename, 'w') { |f| f.write(conf) }
-      rescue Exception => e
-        raise e.message
-      end
+      File.open(conf_filename, 'w') { |f| f.write(conf) }
 
-      self.open(path)
+      open(path)
     end
 
     # Open an existing Wmonk project from a folder
@@ -76,16 +72,9 @@ module Wmonk
     # @return [Object] the opened project
     def self.open(path)
       conf_filename = Pathname.new(path) + CONF_FILENAME
-      conf = nil
-      begin
-        conf = YAML::load(File.open(conf_filename, 'r'))
-      rescue Exception => e
-        raise e.message
-      end
-
-      project = new(path, conf)
-
-      project
+      conf = YAML::load(File.open(conf_filename, 'r'))
+      raise "problem with project configuration file - #{conf_filename}" if conf.nil?
+      new(path, conf)
     end
 
     # The project's title
