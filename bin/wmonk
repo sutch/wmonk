@@ -18,85 +18,17 @@ flag [:p,:pathname]
 
 desc 'Initialize a folder to copy a website'
 long_desc <<EOS
-Create folder if it does not exist.  Populate folder with initial configuration files.
+Create folder if it does not exist.  Populate folder with project configuration file.
 EOS
 
 arg_name 'seed URL(s)'
 command :init do |c|
-  c.desc 'Augment seeds with well known files'
+  c.desc 'Augment seed URLs with well known files'
   c.switch [:a, :augment]
 
   c.action do |global,options,args|
-
-    # determine seed URLs
-    if args.length == 0
-      raise "no seed URLs supplied"
-    end
-    urls = []
-    args.each do |u|
-      if u =~ URI::DEFAULT_PARSER.regexp[:ABS_URI]
-        urls.push u
-        puts "Seed URL: #{u}" if global[:verbose]
-      else
-        raise "bad seed URL: #{u}"
-      end
-    end
-
-    # determine host, port and scheme; ensure configuration is limited to one website
-    host = port = scheme = nil
-    urls.each do |u|
-      u = URI.parse u
-      u.scheme = u.scheme.downcase
-      raise "#{u.scheme} scheme not supported: #{u}" if ! ['http', 'https'].include? u.scheme
-      u.host = u.host.downcase
-      if host == nil
-        host = u.host
-        port = u.port
-        scheme = u.scheme
-      end
-      if host != u.host or port != u.port or scheme != u.scheme
-        url_1 = URI.parse("#{scheme}://#{host}:#{port}").to_s
-        url_2 = URI.parse("#{u.scheme}://#{u.host}:#{u.port}").to_s
-        raise "multiple websites not supported: requested #{url_1} and #{url_2}" 
-      end
-    end
-
-    # create working folder if it does not exist
-    if ! File.exists? global[:pathname]
-      puts "Creating working folder: #{global[:pathname]}" if global[:verbose]
-      begin
-        Dir.mkdir global[:pathname]
-      rescue Exception => e
-        raise e.message
-      end
-    end
-
-    # error if working folder is not empty
-    if ! (Dir.entries(global[:pathname]) - %w{ . .. }).empty?
-      raise "cannot initialize non-empty working folder - #{global[:pathname]}"
-    end
-
-    conf_filename = Pathname.new(global[:pathname]) + 'spider.yaml'
-    puts "Creating configuration file: #{conf_filename}" if global[:verbose]
-
-    # augment seed URLs
-    if options[:augment]
-      puts "Augmenting seed URLs with well known files" if global[:verbose]
-      YAML::load(File.open(File.join(File.dirname(__FILE__), '../assets/well_known_files.yaml')), 'r').each do |path|
-        urls.push URI.parse("#{scheme}://#{host}:#{port}#{path}").to_s
-      end
-    end
-
-    # read spider.yaml template and substitute values
-    SEED_URLS = {'seed_urls' => urls}
-    conf = ERB.new(File.open(File.join(File.dirname(__FILE__), '../assets/wmonk.yaml.template'), 'r').read).result
-
-    puts "Writing spider.yaml" if global[:verbose]
-    begin
-      File.open(Pathname.new(global[:pathname]) + 'spider.yaml', 'w') { |f| f.write(conf) }
-    rescue Exception => e
-      raise e.message
-    end
+    raise "no seed URLs supplied" if args.length == 0
+    Wmonk::Project.create(global[:pathname], seed_urls: args, seed_well_known_files: options[:augment])
   end
 end
 
@@ -110,43 +42,36 @@ EOS
 
 command :spider do |c|
   c.action do |global,options,args|
+    project = Wmonk::Project.open(global[:pathname])
 
-    conf_filename = Pathname.new(global[:pathname]) + 'spider.yaml'
-    puts "Reading spider.yaml" if global[:verbose]
-    begin
-      conf = YAML::load(File.open(Pathname.new(global[:pathname]) + 'spider.yaml', 'r'))
-    rescue Exception => e
-      raise e.message
-    end
-
-    urls = conf['seed_urls']
-
-    # determine host, port and scheme; ensure configuration is limited to one website
-    host = port = scheme = nil
-    urls.each do |u|
-      u = URI.parse u
-      u.scheme = u.scheme.downcase
-      raise "#{u.scheme} scheme not supported: #{u}" if ! ['http', 'https'].include? u.scheme
-      u.host = u.host.downcase
-      if host == nil
-        host = u.host
-        port = u.port
-        scheme = u.scheme
-      end
-      if host != u.host or port != u.port or scheme != u.scheme
-        url_1 = URI.parse("#{scheme}://#{host}:#{port}").to_s
-        url_2 = URI.parse("#{u.scheme}://#{u.host}:#{u.port}").to_s
-        raise "multiple websites not supported: requested #{url_1} and #{url_2}"
-      end
-    end
-    u = URI.parse("#{scheme}://#{host}:#{port}")
-    puts "Configured to spider #{u.to_s}" if global[:verbose]
-
-    copy_exists = File.exist?(Pathname.new(global[:pathname]) + 'spider.sqlite')
+    #urls = conf['seed_urls']
+    #
+    ## determine host, port and scheme; ensure configuration is limited to one website
+    #host = port = scheme = nil
+    #urls.each do |u|
+    #  u = URI.parse u
+    #  u.scheme = u.scheme.downcase
+    #  raise "#{u.scheme} scheme not supported: #{u}" if ! ['http', 'https'].include? u.scheme
+    #  u.host = u.host.downcase
+    #  if host == nil
+    #    host = u.host
+    #    port = u.port
+    #    scheme = u.scheme
+    #  end
+    #  if host != u.host or port != u.port or scheme != u.scheme
+    #    url_1 = URI.parse("#{scheme}://#{host}:#{port}").to_s
+    #    url_2 = URI.parse("#{u.scheme}://#{u.host}:#{u.port}").to_s
+    #    raise "multiple websites not supported: requested #{url_1} and #{url_2}"
+    #  end
+    #end
+    #u = URI.parse("#{scheme}://#{host}:#{port}")
+    #puts "Configured to spider #{u.to_s}" if global[:verbose]
+    #
+    #copy_exists = File.exist?(Pathname.new(global[:pathname]) + 'spider.sqlite')
     storage = Wmonk::AnemoneStorageSQLite3.new((Pathname.new(global[:pathname]) + 'spider.sqlite').to_s)
-    urls = storage.not_visited_urls if copy_exists
+    #urls = storage.not_visited_urls if copy_exists
 
-    Anemone.crawl(urls, verbose: true, page_class: Anemone::Resource) do |anemone|
+    Anemone.crawl(project.seed_urls, verbose: true, page_class: Anemone::Resource) do |anemone|
       anemone.storage = storage
 
       anemone.on_every_page do |page|
