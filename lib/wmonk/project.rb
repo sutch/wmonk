@@ -2,7 +2,6 @@ module Wmonk
 
   # A folder containing a Wmonk project to copy a website
   class Project
-    extend Wmonk
 
     # Create a new Wmonk project in a folder
     #
@@ -32,7 +31,7 @@ module Wmonk
       end
 
       conf_filename = Pathname.new(path) + CONF_FILENAME
-      conf = ERB.new(File.open(assets_path(CONF_TEMPLATE), 'r').read).result binding
+      conf = ERB.new(File.open(Wmonk.assets_path(CONF_TEMPLATE), 'r').read).result binding
       File.open(conf_filename, 'w') { |f| f.write(conf) }
 
       open(path)

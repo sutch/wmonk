@@ -27,7 +27,7 @@ module Wmonk
   SUPPORTED_URI_SCHEMES = ['http', 'https']
   WELL_KNOWN_FILES_FILENAME = 'well_known_files.yaml'
 
-  def assets_path(filename = nil)
+  def self.assets_path(filename = nil)
     path = File.join(File.dirname(__FILE__), '../assets/')
     path = path + filename if ! filename.nil?
     path
@@ -35,7 +35,7 @@ module Wmonk
 
   # List of well known files often found on websites
   # @return [Array] the list of well known files
-  def well_known_files
+  def self.well_known_files
     @@well_known_files ||= nil
     if @@well_known_files.nil?
       @@well_known_files = []

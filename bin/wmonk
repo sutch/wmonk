@@ -28,7 +28,18 @@ command :init do |c|
 
   c.action do |global,options,args|
     raise "no seed URLs supplied" if args.length == 0
-    project = Wmonk::Project.create(global[:pathname], root_urls: Wmonk.root_urls(args), seed_urls: args)
+    root_urls = Wmonk.root_urls(args)
+    seed_urls = args
+    if options[:augment]
+      root_urls.each do |url|
+        Wmonk.well_known_files.each do |path|
+          url = URI.parse(url.to_s)
+          url.path = path
+          seed_urls << url.to_s
+        end
+      end
+    end
+    project = Wmonk::Project.create(global[:pathname], root_urls: root_urls, seed_urls: args)
     Wmonk::Copy.new(project.path).create
   end
 end
@@ -60,10 +71,6 @@ command :spider do |c|
         links = copy.get_body_by_digest(page.data.body_digest).links(resource_url: page.url, content_type: page.content_type, project: project)
 
 
-
-
-        # filter links not part of the project
-
         # ensure links saved to project and linkage recorded (which page contains each link)
 
         #links = page.links
@@ -71,7 +78,8 @@ command :spider do |c|
         #  Link.where(body: body, url: Url.where(url: link.to_s).first_or_create!).first_or_create!
         #end
 
-        puts "focus_crawl: #{page.url} contains #{links.count} links"
+
+        puts "focus_crawl: #{page.url} contains #{links.count} links" #if global[:verbose]
         links
       }
     end
