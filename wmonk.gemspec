@@ -29,7 +29,6 @@ lib/wmonk.rb
   s.add_development_dependency('rspec')
   s.add_development_dependency('shoulda')
   s.add_runtime_dependency('gli')
-  #s.add_runtime_dependency('sutch-anemone')  # git://github.com/sutch/anemone.git
   s.add_runtime_dependency('anemone')
   s.add_runtime_dependency('content_urls')
   s.add_runtime_dependency('sqlite3')

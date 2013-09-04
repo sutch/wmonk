@@ -5,9 +5,6 @@ wmonk (Web Monk) is a command line application for making static copies of websi
 Note: This application is currently considered ALPHA and will experience major changes to the user interfaces, internal
 interfaces, functionality and data storage.
 
-Note: This application requires the sutch-anemone gem, a branch Anemone, to allow the capture of all website
-responses/resources.
-
 == The Need
 
 wmonk attempts to copy complex, dynamic websites which other solutions fail to accurately copy, usually due to:
@@ -18,7 +15,7 @@ wmonk attempts to copy complex, dynamic websites which other solutions fail to a
 == Overview
 
 wmonk uses a working forlder for each website to be copied.  The working folder is used to contain wmonk's
-configuration for spidering and parsing the website, as well as the static copy of the website.
+configuration for spidering and parsing websites, as well as the static copy of websites.
 
 wmonk's command line interface provides:
 * init -- to initialize a working folder for configuration and website responses for an individual website
