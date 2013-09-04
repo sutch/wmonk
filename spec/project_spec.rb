@@ -48,6 +48,33 @@ describe Wmonk::Project, '#open' do
     project.title.should == title
   end
 
+  it 'obtains an empty array of root URLs from the configuration file when no root URLs' do
+    Wmonk::Project.create(@dir)
+    project = Wmonk::Project.open(@dir)
+    project.root_urls.size.should == 0
+  end
+
+  it 'obtains the list of root URLs from the configuration file' do
+    urls = ["http://www.example.com/", "http://www.example.net/"]
+    Wmonk::Project.create(@dir, root_urls: urls)
+    project = Wmonk::Project.open(@dir)
+    project.root_urls.sort.should == urls
+  end
+
+  it 'finds URL in scope' do
+    urls = ["http://www.example.com/", "http://www.example.net/"]
+    Wmonk::Project.create(@dir, root_urls: urls)
+    project = Wmonk::Project.open(@dir)
+    project.url_in_scope?('http://www.example.com/some/path').should == true
+  end
+
+  it 'finds URL is not in scope' do
+    urls = ["http://www.example.com/", "http://www.example.net/"]
+    Wmonk::Project.create(@dir, root_urls: urls)
+    project = Wmonk::Project.open(@dir)
+    project.url_in_scope?('http://not.example.com/some/other/path').should == false
+  end
+
   it 'obtains an empty array of seed URLs from the configuration file when no seed URLs' do
     Wmonk::Project.create(@dir)
     project = Wmonk::Project.open(@dir)
@@ -59,13 +86,6 @@ describe Wmonk::Project, '#open' do
     Wmonk::Project.create(@dir, seed_urls: urls)
     project = Wmonk::Project.open(@dir)
     project.seed_urls.sort.should == urls
-  end
-
-  it 'seeds URLs for well known files' do
-    urls = ["http://www.example.com/", "http://www.example.com/hidden.html"]
-    Wmonk::Project.create(@dir, seed_urls: urls, seed_well_known_files: true)
-    project = Wmonk::Project.open(@dir)
-    project.seed_urls.size.should > urls.size
   end
 
 end

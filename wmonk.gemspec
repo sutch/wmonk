@@ -27,9 +27,13 @@ lib/wmonk.rb
   s.add_development_dependency('yard')
   s.add_development_dependency('redcarpet')
   s.add_development_dependency('rspec')
+  s.add_development_dependency('shoulda')
   s.add_runtime_dependency('gli')
-  s.add_runtime_dependency('sutch-anemone')  # git://github.com/sutch/anemone.git
+  #s.add_runtime_dependency('sutch-anemone')  # git://github.com/sutch/anemone.git
+  s.add_runtime_dependency('anemone')
+  s.add_runtime_dependency('content_urls')
   s.add_runtime_dependency('sqlite3')
+  s.add_runtime_dependency('activerecord')
   s.add_runtime_dependency('rack')
   s.add_runtime_dependency('sinatra')
   s.add_runtime_dependency('slim')

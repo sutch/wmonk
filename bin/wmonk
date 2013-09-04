@@ -4,7 +4,7 @@ require 'wmonk'
 
 include GLI::App
 
-program_desc 'Make a static copy of a website'
+program_desc 'Make a static copy of one or more websites'
 
 version Wmonk::VERSION
 
@@ -28,7 +28,8 @@ command :init do |c|
 
   c.action do |global,options,args|
     raise "no seed URLs supplied" if args.length == 0
-    Wmonk::Project.create(global[:pathname], seed_urls: args, seed_well_known_files: options[:augment])
+    project = Wmonk::Project.create(global[:pathname], root_urls: Wmonk.root_urls(args), seed_urls: args)
+    Wmonk::Copy.new(project.path).create
   end
 end
 
@@ -44,45 +45,33 @@ command :spider do |c|
   c.action do |global,options,args|
     project = Wmonk::Project.open(global[:pathname])
 
-    #urls = conf['seed_urls']
-    #
-    ## determine host, port and scheme; ensure configuration is limited to one website
-    #host = port = scheme = nil
-    #urls.each do |u|
-    #  u = URI.parse u
-    #  u.scheme = u.scheme.downcase
-    #  raise "#{u.scheme} scheme not supported: #{u}" if ! ['http', 'https'].include? u.scheme
-    #  u.host = u.host.downcase
-    #  if host == nil
-    #    host = u.host
-    #    port = u.port
-    #    scheme = u.scheme
-    #  end
-    #  if host != u.host or port != u.port or scheme != u.scheme
-    #    url_1 = URI.parse("#{scheme}://#{host}:#{port}").to_s
-    #    url_2 = URI.parse("#{u.scheme}://#{u.host}:#{u.port}").to_s
-    #    raise "multiple websites not supported: requested #{url_1} and #{url_2}"
-    #  end
-    #end
-    #u = URI.parse("#{scheme}://#{host}:#{port}")
-    #puts "Configured to spider #{u.to_s}" if global[:verbose]
-    #
-    #copy_exists = File.exist?(Pathname.new(global[:pathname]) + 'spider.sqlite')
-    storage = Wmonk::AnemoneStorageSQLite3.new((Pathname.new(global[:pathname]) + 'spider.sqlite').to_s)
-    #urls = storage.not_visited_urls if copy_exists
-
-    Anemone.crawl(project.seed_urls, verbose: true, page_class: Anemone::Resource) do |anemone|
-      anemone.storage = storage
+    Anemone.crawl(project.seed_urls, verbose: true) do |anemone|
+      copy = Wmonk::Copy.new(project.path)
 
       anemone.on_every_page do |page|
         puts "on_every_page: #{page.url} (#{page.code}) #{page.content_type} length: #{page.body.length} => processing (on_every_page)" #if global[:verbose]
+        copy.add_response(page)
+        page.discard_doc!
       end
 
       anemone.focus_crawl { |page|
-        puts "focus_crawl: #{page.url} => processing (focus_crawl)" if global[:verbose]
-        #page.links
-        links = page.links
-        puts "focus_crawl: number of links = #{links.count}"
+        puts "focus_crawl: #{page.url} => processing (focus_crawl)" #if global[:verbose]
+
+        links = copy.get_body_by_digest(page.data.body_digest).links(resource_url: page.url, content_type: page.content_type, project: project)
+
+
+
+
+        # filter links not part of the project
+
+        # ensure links saved to project and linkage recorded (which page contains each link)
+
+        #links = page.links
+        #links.each do |link|
+        #  Link.where(body: body, url: Url.where(url: link.to_s).first_or_create!).first_or_create!
+        #end
+
+        puts "focus_crawl: #{page.url} contains #{links.count} links"
         links
       }
     end

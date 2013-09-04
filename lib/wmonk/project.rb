@@ -8,46 +8,19 @@ module Wmonk
     #
     # @param path [String] the path of the folder to contain the project
     # @option options [String] :title title for the project
-    # @option options [Array] :seed_urls ([]) seed URLs for spider
-    # @option options [Boolean] :seed_well_known_files (false) whether to include seed URLs for well known files
+    # @option options [Array] :root_urls ([]) root URLs for defining scope of spider
+    # @option options [Array] :seed_urls ([]) seed URLs for spider to begin
     # @return [Object] the created project
     def self.create(path, options = {})
       options = {
           :title => nil,
+          :root_urls => [],
           :seed_urls => [],
-          :seed_well_known_files => false,
       }.merge(options)
 
-      # build list of seed URLs
-      seed_urls = []
-      host = port = scheme = nil
-      options[:seed_urls].each do |u|
-        seed_urls << u
-        warn "bad seed URL: #{u}" && next if u !~ URI::DEFAULT_PARSER.regexp[:ABS_URI]
-        u = URI.parse u
-        u.scheme = u.scheme.downcase
-        warn "#{u.scheme} scheme not supported - #{u}" && next if ! SUPPORTED_URI_SCHEMES.include? u.scheme
-        u.host = u.host.downcase
-        if host.nil?  # first URL is used to to determine default host, port, scheme
-          host = u.host
-          port = u.port
-          scheme = u.scheme
-          if options[:seed_well_known_files]
-            well_known_files.each { |path| seed_urls << URI.parse("#{scheme}://#{host}:#{port}#{path}").to_s }
-          end
-        elsif host != u.host or port != u.port or scheme != u.scheme
-          warn "multiple websites not supported - #{seed_urls[0]} and #{u}"
-        end
-      end
-
-      title = { 'title' => options[:title] }
-      if options[:title].nil?
-        if host.nil? && seed_urls.size == 0
-          title = { 'title' => "Wmonk project to copy an unspecified website" }
-        else
-          title = { 'title' => "Wmonk project to copy " + (host.nil? ? seed_urls[0] : URI.parse("#{scheme}://#{host}:#{port}").to_s) }
-        end
-      end
+      title = { 'title' => options[:title].nil? ? "An untitled Wmonk project" : options[:title] }
+      root_urls = { 'root_urls' => options[:root_urls].nil? ? [] : options[:root_urls] }
+      seed_urls = { 'seed_urls' => options[:seed_urls].nil? ? [] : options[:seed_urls] }
 
       # create working folder if it does not exist
       Dir.mkdir path if ! File.exists? path
@@ -59,7 +32,6 @@ module Wmonk
       end
 
       conf_filename = Pathname.new(path) + CONF_FILENAME
-      seed_urls = { 'seed_urls' => seed_urls }
       conf = ERB.new(File.open(assets_path(CONF_TEMPLATE), 'r').read).result binding
       File.open(conf_filename, 'w') { |f| f.write(conf) }
 
@@ -83,11 +55,28 @@ module Wmonk
       @conf['title']
     end
 
+    # The project's root URLs
+    # @return [Array]
+    def root_urls
+      @conf['root_urls']
+    end
+
+    def url_in_scope?(url)
+      url = URI.parse(url.to_s)
+      root_urls.each do |r|
+        r = URI.parse(r)
+        return true if url.host == r.host and url.scheme == r.scheme and url.port == r.port
+      end
+      return false
+    end
+
     # The project's seed URLs
     # @return [Array]
     def seed_urls
       @conf['seed_urls']
     end
+
+    attr_reader :path
 
     protected
     def initialize(path, conf)

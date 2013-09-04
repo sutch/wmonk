@@ -2,10 +2,12 @@ require 'wmonk/version.rb'
 
 require 'pathname'
 require 'uri'
+require 'addressable/uri'
 require 'cgi'
 require 'logger'
 require 'sqlite3'
 require 'anemone'
+require 'content_urls'
 require 'webrick'
 require 'rack'
 require 'yaml'
@@ -40,6 +42,22 @@ module Wmonk
       YAML::load(File.open(assets_path(WELL_KNOWN_FILES_FILENAME)), 'r').each {|f| @@well_known_files << f}
     end
     @@well_known_files
+  end
+
+  # List of root URLs for a list of URLs
+  # @option options [Array] :urls ([]) list of URLs
+  # @return [Array] the list of root URLs for the supplied list URLs
+  def self.root_urls(urls)
+    urls ||= []
+    root_urls = []
+    urls.each do |url|
+      url = URI.parse(url)
+      url.path = '/'
+      url.query = nil
+      url.fragment = nil
+      root_urls << url.to_s
+    end
+    root_urls.uniq
   end
 
 end
