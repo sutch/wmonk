@@ -20,8 +20,7 @@ configuration for spidering and parsing websites, as well as the static copy of 
 wmonk's command line interface provides:
 * init -- to initialize a working folder for configuration and website responses for an individual website
 * spider -- to spider a website
-* serve_info -- to provide a web interface to information about the copy of the website
-* serve_web -- to browse the static copy of the website
+* serve -- to provide a web interface to information about the copy of the website and to provide a static copy of the website
 
 == Examples
 
