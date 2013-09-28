@@ -2,7 +2,7 @@ require 'wmonk/version.rb'
 
 require 'pathname'
 require 'uri'
-require 'addressable/uri'
+#require 'addressable/uri'
 require 'cgi'
 require 'logger'
 require 'sqlite3'
@@ -15,10 +15,10 @@ require 'sinatra/base'
 require 'slim'
 
 require 'wmonk/project'
-require 'wmonk/anemone_storage_sq_lite3'
 require 'wmonk/copy'
-require 'wmonk/info_server'
-require 'wmonk/web_server'
+require 'wmonk/anemone_storage'
+require 'wmonk/server'
+
 
 module Wmonk
 

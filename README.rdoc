@@ -28,7 +28,7 @@ wmonk's command line interface provides:
   % wmonk help
   % wmonk -p ~/sites/example.com init -a http://www.example.com
   % wmonk -p ~/sites/example.com spider
-  % wmonk -p ~/sites/example.com serve_web
+  % wmonk -p ~/sites/example.com serve
 
 == Implementation Details
 

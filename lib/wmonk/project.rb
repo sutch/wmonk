@@ -61,10 +61,14 @@ module Wmonk
     end
 
     def url_in_scope?(url)
-      url = URI.parse(url.to_s)
-      root_urls.each do |r|
-        r = URI.parse(r)
-        return true if url.host == r.host and url.scheme == r.scheme and url.port == r.port
+      begin
+        url = URI.parse(url.to_s)
+        root_urls.each do |r|
+          r = URI.parse(r)
+          return true if url.host == r.host and url.scheme == r.scheme and url.port == r.port
+        end
+      rescue
+        return false
       end
       return false
     end

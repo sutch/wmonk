@@ -56,28 +56,27 @@ command :spider do |c|
   c.action do |global,options,args|
     project = Wmonk::Project.open(global[:pathname])
 
+    # TODO: populate Urls from configuration
+    puts project.seed_urls
     Anemone.crawl(project.seed_urls, verbose: true) do |anemone|
       copy = Wmonk::Copy.new(project.path)
+      storage = anemone.storage = Wmonk::AnemoneStorage.new
 
       anemone.on_every_page do |page|
         puts "on_every_page: #{page.url} (#{page.code}) #{page.content_type} length: #{page.body.length} => processing (on_every_page)" #if global[:verbose]
-        copy.add_response(page)
-        page.discard_doc!
+        storage[page.url] = page
       end
 
       anemone.focus_crawl { |page|
         puts "focus_crawl: #{page.url} => processing (focus_crawl)" #if global[:verbose]
 
-        links = copy.get_body_by_digest(page.data.body_digest).links(resource_url: page.url, content_type: page.content_type, project: project)
-
-
-        # ensure links saved to project and linkage recorded (which page contains each link)
-
-        #links = page.links
-        #links.each do |link|
-        #  Link.where(body: body, url: Url.where(url: link.to_s).first_or_create!).first_or_create!
-        #end
-
+        links = []
+        unless page.data.exchange_id.nil?
+          exchange = Exchange.find_by(id: page.data.exchange_id)
+          links = exchange.links
+          links.reject! {|link| !project.url_in_scope?(link)}
+          links.uniq
+        end
 
         puts "focus_crawl: #{page.url} contains #{links.count} links" #if global[:verbose]
         links
@@ -86,28 +85,19 @@ command :spider do |c|
   end
 end
 
-desc 'Serve website from static copy'
+desc 'Serve information about and copy of website from static copy'
 long_desc <<EOS
-View static copy of website from a web browser.
+View information and static copy of website from a web browser.
 EOS
 
-command :serve_web do |c|
-  c.desc 'Port from which to serve website'
-  c.switch [:p, :port]
-
-  c.action do |global,options,args|
-    copy = Wmonk::Copy.new(global[:pathname])
-    Wmonk::WebServer.new(copy, port: options[:port]).start
-  end
-end
-
-command :serve_info do |c|
+command :serve do |c|
   c.desc 'Port from which to serve information about website'
   c.switch [:p, :port]
 
   c.action do |global,options,args|
-    copy = Wmonk::Copy.new(global[:pathname])
-    Wmonk::InfoServer.new(copy, type: :info).start
+    project = Wmonk::Project.open(global[:pathname])
+    copy = Wmonk::Copy.new(project.path)
+    Wmonk::Server.new(project, type: :info).start
   end
 end
 
